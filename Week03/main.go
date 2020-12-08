@@ -56,17 +56,18 @@ func main() {
 	server := &http.Server{Addr: HOST1, Handler: mux}
 	closeHandler.CloseChan = s1Ch
 
-	closeServerChan := make(chan struct{})
-	closeSignalChan := make(chan struct{})
+	closeServerChan := make(chan struct{}, 1)
+	closeSignalChan := make(chan struct{}, 1)
 
-	g.Go(func() error {
+	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
-			return err
+			fmt.Println(err)
 		}
+	}()
+	g.Go(func() error {
 		select {
 		case err := <-s1Ch:
-			fmt.Println("SSSS")
 			closeSignalChan <- struct{}{}
 			return err
 		case <- closeServerChan:
@@ -77,8 +78,8 @@ func main() {
 
 	// 接收信号
 	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	g.Go(func() error{
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		select {
 		case sig := <-sigs:
 			closeServerChan <- struct{}{}
