@@ -23,7 +23,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	// grpc client
+	// grpc tcpclient
 	c := v1.NewUserClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
